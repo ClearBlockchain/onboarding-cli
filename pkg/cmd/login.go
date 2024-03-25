@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ClearBlockchain/onboarding-cli/pkg/gcp"
 	"github.com/ClearBlockchain/onboarding-cli/pkg/ui"
 	"github.com/ClearBlockchain/onboarding-cli/pkg/utils"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/huh/spinner"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -16,11 +16,6 @@ func getGCPPorjectsAsHuhOptions(options *[]huh.Option[string]) {
 	for _, project := range gcp.GetGCPProjects() {
 		*options = append(*options, huh.NewOption(project, project))
 	}
-}
-
-func waitForCredenetials() {
-	// sleep for 5 seconds
-	time.Sleep(10 * time.Second)
 }
 
 var LoginCmd = &cobra.Command{
@@ -45,7 +40,7 @@ var LoginCmd = &cobra.Command{
 		var (
 			selectedAPIs []string
 			selectedGCPProject string
-			confirmGCPFlow bool = false
+			// confirmGCPFlow bool = false
 			generateEnvFile bool = false
 		)
 
@@ -78,52 +73,29 @@ var LoginCmd = &cobra.Command{
 			Value(&selectedGCPProject).
 			Run()
 
-		// confirm the user understand the flow
-		for ok := true; ok; ok = !confirmGCPFlow {
-			huh.NewConfirm().
-				Title(fmt.Sprintf(
-					"\n%s\n\n%s",
-					ui.Paragraph(
-						fmt.Sprintf(
-							"We will now open a %d browser tabs to complete the checkout process with your Google Cloud account. To complete the checkout click on the 'Subscribe' button on the Google Cloud Marketplace page.",
-							len(selectedAPIs),
-						),
-					),
-					ui.Paragraph("Are you ready to continue?"),
-				)).
-				Value(&confirmGCPFlow).
-				Run()
-		}
-
 		// open the browser tabs
+		var credentials *gcp.Credentials
 		for _, api := range selectedAPIs {
-			utils.OpenBrowser(
-				fmt.Sprintf(
-					"https://console.cloud.google.com/marketplace/product/opengatewayaggregation-public/%s?hl=en&project=%s",
-					api,
-					selectedGCPProject,
-				),
-			)
-		}
+			cred, err := gcp.PurchaseOGI(api, selectedGCPProject)
+			if err != nil {
+				log.Errorf("Failed to purchase %s: %v", api, err)
+				continue
+			}
 
-		// Let the user know that once he completed the checkout process
-		// he needs to click on the 'Manage on provider' button
-		// and we will with for the event on localhost:9919
-		spinner.New().
-			Title(
-				fmt.Sprintf(
-					"%s\n\n%s",
-					"Once you've completed the checkout process, please click on the 'Manage on provider' button.",
-					ui.Title("Waiting for credentials..."),
-				),
-			).
-			Action(waitForCredenetials).
-			Run()
+			credentials = cred
+		}
 
 		// ask the user if they want to generate a .env file
 		huh.NewConfirm().
 			Title("Do you want to generate a .env file with the credentials?").
 			Value(&generateEnvFile).
 			Run()
+
+		if generateEnvFile {
+			// generate the .env file
+			if err := utils.WriteCredsToEnv(credentials); err != nil {
+				log.Errorf("Failed to write credentials to .env file: %v", err)
+			}
+		}
 	},
 }
