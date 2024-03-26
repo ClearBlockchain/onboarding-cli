@@ -1,6 +1,7 @@
 package gcp
 
 import (
+	"fmt"
 	"net"
 	"os/exec"
 	"runtime"
@@ -9,6 +10,17 @@ import (
 	"github.com/playwright-community/playwright-go"
 	log "github.com/sirupsen/logrus"
 )
+
+var (
+	ErrUnsupportedPlatform = fmt.Errorf("unsupported platform")
+)
+
+type PlaywrightInfo struct {
+	Playwright *playwright.Playwright
+	Context	playwright.BrowserContext
+	Browser    playwright.Browser
+	Page       playwright.Page
+}
 
 func init() {
 	err := playwright.Install(&playwright.RunOptions{
@@ -20,53 +32,121 @@ func init() {
 }
 
 // return playwright, browser, and page.
-func getPlaywright() (*playwright.Playwright, playwright.Browser, playwright.Page) {
+func getPlaywright() (pwi *PlaywrightInfo, err error) {
 	pw, err := playwright.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	openChrome(false)
+	var browser playwright.Browser
 
-	browser, err := pw.Chromium.ConnectOverCDP("http://localhost:9222")
+	browser, err = pw.Chromium.ConnectOverCDP("http://localhost:9222")
 	if err != nil {
-		log.Fatal(err)
+		_, err := openChrome()
+		if err != nil {
+			log.Errorf("Failed to open chrome: %v", err)
+			return nil, err
+		}
+
+		browser, err = pw.Chromium.ConnectOverCDP("http://localhost:9222")
+		if err != nil {
+			log.Errorf("Failed to connect to the browser: %v", err)
+			return nil, err
+		}
 	}
 
-	defaultContext := browser.Contexts()[0]
-	page := defaultContext.Pages()[0]
+	defaultContext, page, err := getContextAndPage(browser)
+	if err != nil {
+		log.Errorf("Failed to get context and page: %v", err)
+		return nil, err
+	}
 
-	return pw, browser, page
+	return &PlaywrightInfo{
+		Playwright: pw,
+		Context: defaultContext,
+		Browser:    browser,
+		Page:       page,
+	}, nil
 }
 
-func openChrome(headless bool) {
-	// find default chrome executable
-	var chromePath string
+func getContextAndPage(browser playwright.Browser) (playwright.BrowserContext, playwright.Page, error) {
+	var defaultContext playwright.BrowserContext
+	var page playwright.Page
+
+	if len(browser.Contexts()) == 0 {
+		dc, err := browser.NewContext()
+		if err != nil {
+			log.Errorf("Failed to create a new context: %v", err)
+			return nil, nil, err
+		}
+
+		defaultContext = dc
+	} else {
+		defaultContext = browser.Contexts()[0]
+	}
+
+	if len(defaultContext.Pages()) == 0 {
+		p, err := defaultContext.NewPage()
+		if err != nil {
+			log.Errorf("Failed to create a new page: %v", err)
+			return nil, nil, err
+		}
+
+		page = p
+	} else {
+		page = defaultContext.Pages()[0]
+	}
+
+	return defaultContext, page, nil
+}
+
+func (p *PlaywrightInfo) Close() {
+	// close each of the open tabs
+	for _, page := range p.Browser.Contexts()[0].Pages() {
+		page.Close()
+	}
+
+	// close the browser
+	p.Browser.Close()
+	p.Playwright.Stop()
+}
+
+func getExecutablePath() (string, error) {
 	switch runtime.GOOS {
 	case "linux":
-		chromePath = "/usr/bin/google-chrome"
+		return "/usr/bin/google-chrome", nil
 	case "windows":
-		chromePath = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+		return "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe", nil
 	case "darwin":
-		chromePath = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+		return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", nil
 	default:
-		log.Fatal("unsupported platform")
+		return "", ErrUnsupportedPlatform
+	}
+}
+
+func openChrome() (*exec.Cmd, error) {
+	// find default chrome executable
+	chromePath, err := getExecutablePath()
+	if err != nil {
+		log.Errorf("Failed to get chrome executable path: %v", err)
+		return nil, err
 	}
 
 	args := []string{"--remote-debugging-port=9222"}
-	if headless {
-		args = append(args, "--headless")
-	}
 
 	cmd := exec.Command(chromePath, args...)
 	if err := cmd.Start(); err != nil {
-		log.Fatalf("Failed to start chrome: %v", err)
+		log.Errorf("Failed to start chrome: %v", err)
+		return nil, err
 	}
 
 	// wait for the browser debugging port to be available
 	if err := waitForPort("localhost:9222"); err != nil {
-		log.Fatalf("Failed to wait for the debugging port: %v", err)
+		log.Errorf("Failed to wait for the debugging port: %v", err)
+		return nil, err
 	}
+
+	return cmd, nil
 }
 
 func waitForPort(port string) error {

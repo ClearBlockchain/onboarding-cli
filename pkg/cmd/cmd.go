@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	ui "github.com/ClearBlockchain/onboarding-cli/pkg/ui"
-	"github.com/ClearBlockchain/onboarding-cli/pkg/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -19,11 +18,11 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "glide",
 		Short: "Manage global Network APIs, 5G, Edge resources with ClearX",
-		Long: ui.Paragraph(
-			fmt.Sprintf("\nExplore %s Integration Layer, a one-stop infrastructure offering access to Network APIs, 5G, and edge resources from worldwide CSPs and perform time-sensitive SIM Swap checks using a unified interface and API", ui.Keyword("ClearX Open Gateway")),
+		Long: ui.Paragraph.Render(
+			fmt.Sprintf("\nExplore %s Integration Layer, a one-stop infrastructure offering access to Network APIs, 5G, and edge resources from worldwide CSPs and perform time-sensitive SIM Swap checks using a unified interface and API", ui.Keyword.Render("ClearX Open Gateway")),
 		),
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Print(utils.GetLongDescription())
+			fmt.Print(GetLongDescription())
 
 			err := cmd.Help()
 			if err != nil {

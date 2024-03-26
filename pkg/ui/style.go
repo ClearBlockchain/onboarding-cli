@@ -3,31 +3,26 @@ package ui
 import (
 	_ "github.com/charmbracelet/bubbletea"
 	_ "github.com/charmbracelet/huh"
-
-	. "github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss"
 )
 
 var (
-	Keyword = NewStyle().
-		Foreground(Color("#304ffe")).
-		Render
+	Keyword = lipgloss.NewStyle().
+		Foreground(Brand)
 
-	Underline = NewStyle().
-		Underline(true).
-		Render
+	Underline = lipgloss.NewStyle().
+		Underline(true)
 
-	Paragraph = NewStyle().
-		Width(78).
-		Padding(0, 0, 0, 2).
-		Render
+	Paragraph = lipgloss.NewStyle().
+		Width(DefaultWidth).
+		Padding(0, 0, 0, 2)
 
-	Title = NewStyle().
+	Title = lipgloss.NewStyle().
 		Bold(true).
-		Foreground(Color("#304ffe")).
-		Render
+		Foreground(Brand)
 
-	Box = NewStyle().
-		Border(Border{
+	Box = lipgloss.NewStyle().
+		Border(lipgloss.Border{
 			Top:         "─",
 			Bottom:      "─",
 			Left:        "│",
@@ -37,12 +32,36 @@ var (
 			BottomRight:  "┘",
 			BottomLeft: "└",
 		}).
-		BorderForeground(AdaptiveColor{
-			Light: "#f0f0f0",
-			Dark:  "#333333",
-		}).
+		BorderForeground(Gray).
 		Padding(1, 2).
-		Width(78).
-		Align(Center).
-		Render
+		Width(DefaultWidth).
+		Align(lipgloss.Center)
+
+	Base = lipgloss.NewStyle().
+		Padding(1, 4, 0, 1)
+
+	HeaderText = lipgloss.NewStyle().
+		Foreground(Indigo).
+		Bold(true).
+		Padding(0, 1, 0, 2)
+
+	Status = lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(Indigo).
+		PaddingLeft(1).
+		MarginTop(1)
+
+	StatusHeader = lipgloss.NewStyle().
+		Foreground(Green).
+		Bold(true)
+
+	Highlight = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("212"))
+
+	ErrorHeaderText = HeaderText.
+		Copy().
+		Foreground(Red)
+
+	Help = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240"))
 )

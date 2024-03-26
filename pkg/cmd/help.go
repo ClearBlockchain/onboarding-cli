@@ -1,4 +1,4 @@
-package utils
+package cmd
 
 import (
 	"fmt"
@@ -34,10 +34,10 @@ func shouldDisplayASCIIArt() bool {
 func getLongDescriptionText() string {
 	var response string
 
-	response = "\n" + ui.Keyword("ClearX Open Gateway") + " - One API, Every Telecom Network\n\n"
+	response = "\n" + ui.Keyword.Render("ClearX Open Gateway") + " - One API, Every Telecom Network\n\n"
 	response += "Use the following commands to connect with Glide:\n"
-	response += "  1) " + ui.Keyword("glide login") + " - Add OGI to your GCP account & click " + ui.Underline("Manage on provider") + " to complete the auth flow.\n"
-	response += "  2) " + ui.Keyword("glide docs") + " - Explore our developer's documentation.\n"
+	response += "  1) " + ui.Keyword.Render("glide login") + " - Add OGI to your GCP account & click " + ui.Underline.Render("Manage on provider") + " to complete the auth flow.\n"
+	response += "  2) " + ui.Keyword.Render("glide docs") + " - Explore our developer's documentation.\n"
 
 	// TODO: glide ai; glide help via onscreen docs
 
@@ -70,8 +70,8 @@ func getLongDescriptionFull() string {
 	response = "\n       **********************\n"
 	response += "    .************************.\n"
 	response += "  **************************  \n"
-	response += fmt.Sprintf(" ********.         .********         %s\n", ui.Keyword("ClearX Open Gateway"))
-	response += fmt.Sprintf("********             ********        %s\n", ui.Underline("One API, Every Telecom Network"))
+	response += fmt.Sprintf(" ********.         .********         %s\n", ui.Keyword.Render("ClearX Open Gateway"))
+	response += fmt.Sprintf("********             ********        %s\n", ui.Underline.Render("One API, Every Telecom Network"))
 	response += "*******               ******* \n"
 	response += "*******               ******* \n"
 	response += "********             *******.        Use the following commands to connect with Glide:\n"

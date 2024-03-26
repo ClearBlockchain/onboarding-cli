@@ -1,17 +1,16 @@
 package utils
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/ClearBlockchain/onboarding-cli/pkg/gcp"
 )
 
-func WriteCredsToEnv(credentials *gcp.Credentials) error {
+func WriteCredsToEnv(credentials map[string]string) error {
 	gitRepoDir, err := FindGitRepoDir()
 	if err != nil {
 		log.Fatalf("Failed to find git repo: %v", err)
@@ -20,38 +19,61 @@ func WriteCredsToEnv(credentials *gcp.Credentials) error {
 
 	filePath := fmt.Sprintf("%s/.env", gitRepoDir)
 
-	// if .env does not exist, create it
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		file, err := os.Create(filePath)
-		if err != nil {
-			log.Fatalf("Failed to create .env file: %v", err)
-			return err
-		}
-		defer file.Close()
-	}
-
-	// create creds string
-	credsString := fmt.Sprintf(
-		"GLIDE_REDIRECT_URI=%s\nGLIDE_CLIENT_ID=%s\nGLIDE_CLIENT_SECRET=%s\n",
-		credentials.RedirectURI,
-		credentials.ClientID,
-		credentials.ClientSecret,
-	)
-
-	// append the credentials to the .env file
-	file, err := os.OpenFile(filePath, os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatalf("Failed to open .env file: %v", err)
-		return nil
-	}
-	defer file.Close()
-
-	if _, err := file.WriteString(credsString); err != nil {
-		log.Fatalf("Failed to write to .env file: %v", err)
+	// append variables to the .env file
+	if err := AppendEnvVars(
+		filePath,
+		credentials,
+	); err != nil {
+		log.Fatalf("Failed to append env vars: %v", err)
 		return err
 	}
 
 	return nil
+}
+
+func AppendEnvVars(fileName string, vars map[string]string) error {
+	// Open the file in read-write mode or create it if it does not exist
+	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Read the file line by line and store it in a slice
+	scanner := bufio.NewScanner(file)
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	// Check if the keys exist in the file and update them
+	for key, value := range vars {
+		exists := false
+		for i, line := range lines {
+			if strings.HasPrefix(line, key+"=") {
+				lines[i] = key + "=" + value
+				exists = true
+				break
+			}
+		}
+
+		// If the key does not exist in the file, append it
+		if !exists {
+			lines = append(lines, key+"="+value)
+		}
+	}
+
+	// Write the updated content to the file
+	file.Seek(0, 0)
+	file.Truncate(0)
+	writer := bufio.NewWriter(file)
+	for _, line := range lines {
+		_, err := writer.WriteString(line + "\n")
+		if err != nil {
+			return err
+		}
+	}
+	return writer.Flush()
 }
 
 func FindGitRepoDir() (string, error) {
