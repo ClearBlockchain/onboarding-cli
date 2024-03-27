@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/ClearBlockchain/onboarding-cli/pkg/gcp"
 	"github.com/ClearBlockchain/onboarding-cli/pkg/ui"
@@ -15,7 +16,13 @@ import (
 )
 
 func getGCPPorjectsAsHuhOptions(options *[]huh.Option[string]) {
-	for _, project := range gcp.GetGCPProjects() {
+	projects, err := gcp.GetGCPProjects()
+	if err != nil {
+		log.Errorf("Failed to fetch GCP projects: %v", err)
+		return
+	}
+
+	for _, project := range projects {
 		*options = append(*options, huh.NewOption(project, project))
 	}
 }
@@ -33,6 +40,29 @@ var LoginCmd = &cobra.Command{
 		spinner.New().
 			Title("Fetching your Google Cloud Projects").
 			Action(func() {
+				if !gcp.CheckGcloudExists() {
+					var shouldInstallGcloud bool
+
+					// ask the user if the want to install gcloud
+					huh.NewConfirm().
+						Title("gcloud not found").
+						Description("gcloud command not found. Do you want to install it?").
+						Affirmative("Sure").
+						Negative("No").
+						Value(&shouldInstallGcloud).
+						Run()
+
+					if shouldInstallGcloud {
+						if err := gcp.InstallGcloud(); err != nil {
+							log.Errorf("Failed to install gcloud: %v", err)
+							return
+						}
+					} else {
+						log.Error("gcloud command not found")
+						os.Exit(1)
+					}
+				}
+
 				getGCPPorjectsAsHuhOptions(&gcpProjects)
 			}).
 			Run()
