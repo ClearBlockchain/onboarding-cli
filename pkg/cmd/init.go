@@ -79,13 +79,25 @@ var LoginCmd = &cobra.Command{
 							huh.NewOption("3) Number Verify - Verify the number association to the network", "number-verify"),
 						).
 						Title("Choose the OGI endpoints you need").
-						Description("The selected endpoints will be added to your Google Cloud Platform project."),
+						Description("The selected endpoints will be added to your Google Cloud Platform project.").
+						Validate(func(value []string) error {
+							if len(value) == 0 {
+								return fmt.Errorf("Well, you must select at least one endpoint")
+							}
+							return nil
+						}),
 
 					huh.NewSelect[string]().
 						Key("gcpProject").
 						Options(gcpProjects...).
 						Title("Google Cloud Platform Project").
-						Description("Select the project you want to use for the OGI setup."),
+						Description("Select the project you want to use for the OGI setup.").
+						Validate(func(value string) error {
+							if value == "" {
+								return fmt.Errorf("We need to associate the OGI endpoints with a GCP project - please select one.")
+							}
+							return nil
+						}),
 
 					huh.NewConfirm().
 						Key("done").
