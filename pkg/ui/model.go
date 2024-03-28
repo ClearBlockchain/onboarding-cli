@@ -48,6 +48,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				float64(m.Width) * 0.6,
 			),
 		)
+		m.Form = m.Form.WithHeight(int(float32(msg.Height - Base.GetVerticalFrameSize()) - 10))
 	case tea.KeyMsg:
 		switch msg.String() {
 			case "esc", "ctrl+c", "q":
