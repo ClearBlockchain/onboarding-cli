@@ -3,16 +3,22 @@ package gcp
 import (
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
 	"runtime"
+	"sync"
 	"time"
 
+	"github.com/ClearBlockchain/onboarding-cli/pkg/utils"
 	"github.com/playwright-community/playwright-go"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
 	ErrUnsupportedPlatform = fmt.Errorf("unsupported platform")
+	cpWg sync.WaitGroup
+	profileDataDir string
+	profileDataDirErr error
 )
 
 type PlaywrightInfo struct {
@@ -31,6 +37,15 @@ func init() {
 	}
 
 	log.Debug("Playwright installed")
+
+	// deep copy and mark as done
+	cpWg.Add(1)
+	go func() {
+		profileDataDir, profileDataDirErr = deepCopyDefaultChromeProfile()
+		if profileDataDirErr != nil {
+			log.Errorf("Failed to copy default chrome profile: %v", profileDataDirErr)
+		}
+	}()
 }
 
 // return playwright, browser, and page.
@@ -140,8 +155,18 @@ func openChrome() (*exec.Cmd, error) {
 		log.Errorf("Failed to get chrome executable path: %v", err)
 		return nil, err
 	}
+	log.Debug("Chrome executable path: ", chromePath)
 
-	args := []string{"--remote-debugging-port=9222"}
+	// wait for copy to complete
+	cpWg.Wait()
+	if profileDataDirErr != nil {
+		return nil, profileDataDirErr
+	}
+
+	args := []string{
+		"--remote-debugging-port=9222",
+		"--user-data-dir=" + profileDataDir,
+	}
 
 	cmd := exec.Command(chromePath, args...)
 	if err := cmd.Start(); err != nil {
@@ -158,6 +183,41 @@ func openChrome() (*exec.Cmd, error) {
 	return cmd, nil
 }
 
+func getDefaultChromeProfileDataDir() (string, error) {
+	switch runtime.GOOS {
+	case "linux":
+		return fmt.Sprintf("%s/.config/google-chrome", os.Getenv("HOME")), nil
+	case "windows":
+		return fmt.Sprintf("%s\\AppData\\Local\\Google\\Chrome\\User Data", os.Getenv("USERPROFILE")), nil
+	case "darwin":
+		return fmt.Sprintf("%s/Library/Application Support/Google/Chrome", os.Getenv("HOME")), nil
+	default:
+		return "", ErrUnsupportedPlatform
+	}
+}
+
+func deepCopyDefaultChromeProfile() (string, error) {
+	defer cpWg.Done()
+
+	log.Debug("Copying default chrome profile")
+	tmpDir := fmt.Sprintf("%s/%d/", os.TempDir(), time.Now().Unix())
+	profileDataDir, err := getDefaultChromeProfileDataDir()
+	if err != nil {
+		log.Errorf("Failed to get default chrome profile data dir: %v", err)
+		return "", err
+	}
+	log.Debugf("Default chrome profile data dir: %s", profileDataDir)
+
+	// copy the default chrome profile to a temporary directory
+	if err := utils.CopyDirectory(profileDataDir, tmpDir, true); err != nil {
+		log.Errorf("Failed to copy default chrome profile: %v", err)
+		return "", err
+	}
+
+	log.Debugf("Copied default chrome profile to %s", tmpDir)
+	return tmpDir, nil
+}
+
 func waitForPort(port string) error {
 	timeout := time.After(60 * time.Second)
 	for {
@@ -170,6 +230,8 @@ func waitForPort(port string) error {
 				conn.Close()
 				return nil
 			}
+
+			log.Debugf("Waiting for port %s", port)
 			time.Sleep(1 * time.Second)
 		}
 	}
