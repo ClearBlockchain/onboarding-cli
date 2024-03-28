@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ClearBlockchain/onboarding-cli/pkg/utils"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -42,7 +41,13 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.Width = utils.Min(msg.Width, DefaultWidth) - Base.GetHorizontalFrameSize()
+		// m.Width = utils.Min(msg.Width, DefaultWidth) - Base.GetHorizontalFrameSize()
+		m.Width = msg.Width - Base.GetHorizontalFrameSize()
+		m.Form = m.Form.WithWidth(
+			int(
+				float64(m.Width) * 0.6,
+			),
+		)
 	case tea.KeyMsg:
 		switch msg.String() {
 			case "esc", "ctrl+c", "q":
@@ -109,7 +114,7 @@ func (m Model) View() string {
 				gcpProject = fmt.Sprintf("\nGCP Project:\n- %s\n", Highlight.Render(m.Form.GetString("gcpProject")))
 			}
 
-			const statusWidth = 50
+			statusWidth := int(float32(m.Width) * 0.2)
 			statusMarginLeft := m.Width - statusWidth - lipgloss.Width(form) - Status.GetMarginRight()
 			status = Status.Copy().
 				Height(lipgloss.Height(form)).

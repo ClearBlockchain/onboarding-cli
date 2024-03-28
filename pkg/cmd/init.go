@@ -97,7 +97,7 @@ var LoginCmd = &cobra.Command{
 			),
 		)
 
-		if _, err := tea.NewProgram(model).Run(); err != nil {
+		if _, err := tea.NewProgram(model, tea.WithAltScreen()).Run(); err != nil {
 			log.Fatalf("Oh no: %v", err)
 		}
 
