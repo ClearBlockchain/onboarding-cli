@@ -29,10 +29,13 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Debug("Playwright installed")
 }
 
 // return playwright, browser, and page.
 func getPlaywright() (pwi *PlaywrightInfo, err error) {
+	log.Debug("Getting playwright")
 	pw, err := playwright.Run()
 	if err != nil {
 		log.Fatal(err)
@@ -40,21 +43,27 @@ func getPlaywright() (pwi *PlaywrightInfo, err error) {
 
 	var browser playwright.Browser
 
+	log.Debug("Connecting to the browser")
 	browser, err = pw.Chromium.ConnectOverCDP("http://localhost:9222")
 	if err != nil {
+		log.Debug("Couldn't find browser with port 9222, opening a new one")
 		_, err := openChrome()
 		if err != nil {
 			log.Errorf("Failed to open chrome: %v", err)
 			return nil, err
 		}
 
+		log.Debug("Retrying to connect to the browser")
 		browser, err = pw.Chromium.ConnectOverCDP("http://localhost:9222")
 		if err != nil {
 			log.Errorf("Failed to connect to the browser: %v", err)
 			return nil, err
 		}
+
+		log.Debug("Connected to the browser")
 	}
 
+	log.Debug("Getting context and page")
 	defaultContext, page, err := getContextAndPage(browser)
 	if err != nil {
 		log.Errorf("Failed to get context and page: %v", err)
@@ -150,13 +159,18 @@ func openChrome() (*exec.Cmd, error) {
 }
 
 func waitForPort(port string) error {
+	timeout := time.After(60 * time.Second)
 	for {
-		conn, err := net.Dial("tcp", port)
-		if err == nil {
-			conn.Close()
-			return nil
+		select {
+		case <-timeout:
+			return fmt.Errorf("timeout waiting for port %s", port)
+		default:
+			conn, err := net.Dial("tcp", port)
+			if err == nil {
+				conn.Close()
+				return nil
+			}
+			time.Sleep(1 * time.Second)
 		}
-
-		time.Sleep(1 * time.Second)
 	}
 }
