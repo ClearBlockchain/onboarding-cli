@@ -15,6 +15,7 @@ func CopyDirectory(scrDir, dest string, grace bool) error {
     if err != nil {
         return err
     }
+	log.Debugf("Copying directory: %s to %s", scrDir, dest)
     for _, entry := range entries {
         sourcePath := filepath.Join(scrDir, entry.Name())
         destPath := filepath.Join(dest, entry.Name())

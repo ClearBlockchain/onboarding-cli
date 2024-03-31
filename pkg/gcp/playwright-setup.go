@@ -200,7 +200,15 @@ func deepCopyDefaultChromeProfile() (string, error) {
 	defer cpWg.Done()
 
 	log.Debug("Copying default chrome profile")
-	tmpDir := fmt.Sprintf("%s/%d/", os.TempDir(), time.Now().Unix())
+	tmpDir := fmt.Sprintf("%s/glide-chrome-profile/", os.TempDir())
+
+	// check if tmp directory already exists
+	// and skip the copy if it does
+	if _, err := os.Stat(tmpDir); err == nil {
+		log.Debugf("Temporary directory already exists: %s", tmpDir)
+		return tmpDir, nil
+	}
+
 	profileDataDir, err := getDefaultChromeProfileDataDir()
 	if err != nil {
 		log.Errorf("Failed to get default chrome profile data dir: %v", err)
