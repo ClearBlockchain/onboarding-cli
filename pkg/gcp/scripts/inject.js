@@ -26,7 +26,7 @@ const interval = setInterval(() => {
 }, 500);
 
 const textBubble = document.createElement("div");
-textBubble.innerText = "Subscribe to ClearX OGI to complete the setup.";
+textBubble.innerText = "Subscribe to Glide to complete the setup.";
 textBubble.style.position = "absolute";
 textBubble.style.top = "50%";
 textBubble.style.left = "120%";

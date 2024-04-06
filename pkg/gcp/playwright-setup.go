@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ClearBlockchain/onboarding-cli/pkg/utils"
+	cp "github.com/otiai10/copy"
 	"github.com/playwright-community/playwright-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -200,7 +200,7 @@ func deepCopyDefaultChromeProfile() (string, error) {
 	defer cpWg.Done()
 
 	log.Debug("Copying default chrome profile")
-	tmpDir := fmt.Sprintf("%s/glide-chrome-profile/", os.TempDir())
+	tmpDir := fmt.Sprintf("%sglide-chrome-profile/", os.TempDir())
 
 	// check if tmp directory already exists
 	// and skip the copy if it does
@@ -217,7 +217,17 @@ func deepCopyDefaultChromeProfile() (string, error) {
 	log.Debugf("Default chrome profile data dir: %s", profileDataDir)
 
 	// copy the default chrome profile to a temporary directory
-	if err := utils.CopyDirectory(profileDataDir, tmpDir, true); err != nil {
+	if err := cp.Copy(
+		profileDataDir,
+		tmpDir,
+		cp.Options{
+			OnError: func(src, dest string, err error) error {
+				log.Debugf("[Suppressed Failure] - Unable to copy %s to %s: %v", src, dest, err)
+				// do nothing.
+				return nil
+			},
+		},
+	); err != nil {
 		log.Errorf("Failed to copy default chrome profile: %v", err)
 		return "", err
 	}

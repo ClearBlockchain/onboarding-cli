@@ -77,7 +77,7 @@ func (m Model) View() string {
 	switch m.Form.State {
 	case huh.StateCompleted:
 		var b strings.Builder
-		fmt.Fprintf(&b, "Welcome to %s! We'll take it from here 🤗\n\n", Highlight.Render("ClearX OGI"))
+		fmt.Fprintf(&b, "Welcome to %s! We'll take it from here 🤗\n\n", Highlight.Render("Glide"))
 		fmt.Fprintf(&b, "Please follow the instructions on the browser to complete the setup.")
 		return Status.Copy().Margin(0, 1).Padding(1, 2).Width(48).Render(b.String()) + "\n\n"
 	default:
@@ -121,13 +121,13 @@ func (m Model) View() string {
 				Height(lipgloss.Height(form)).
 				Width(statusWidth).
 				MarginLeft(statusMarginLeft).
-				Render(StatusHeader.Render("Your ClearX OGI Setup") + "\n" +
+				Render(StatusHeader.Render("Your Glide Setup") + "\n" +
 					buildInfo +
 					gcpProject)
 		}
 
 		errors := m.Form.Errors()
-		header := m.appBoundaryView("ClearX OGI Project Initialization")
+		header := m.appBoundaryView("Glide Project Initialization")
 		if len(errors) > 0 {
 			header = m.appErrorBoundaryView(m.errorView())
 		}

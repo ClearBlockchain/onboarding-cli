@@ -30,7 +30,7 @@ func getGCPPorjectsAsHuhOptions(options *[]huh.Option[string]) {
 var LoginCmd = &cobra.Command{
 	Use: "init",
 	Short: ui.Paragraph.Render(
-		fmt.Sprintf("Connect your local development environment with %s on Google Cloud Platform.", ui.Keyword.Render("ClearX Open Gateway")),
+		fmt.Sprintf("Connect your local development environment with %s on Google Cloud Platform.", ui.Keyword.Render("Glide")),
 	),
 	Args: cobra.NoArgs,
 	Aliases: []string{"auth", "authenticate", "signin", "sign-in", "connect", "login"},
@@ -78,7 +78,7 @@ var LoginCmd = &cobra.Command{
 							huh.NewOption("2) SIM Swap Checker - Check if the SIM was swapped lately", "sim-swap"),
 							huh.NewOption("3) Number Verify - Verify the number association to the network", "number-verify"),
 						).
-						Title("Choose the OGI endpoints you need").
+						Title("Choose the Glide endpoints you need").
 						Description("The selected endpoints will be added to your Google Cloud Platform project.").
 						Validate(func(value []string) error {
 							if len(value) == 0 {
@@ -91,10 +91,10 @@ var LoginCmd = &cobra.Command{
 						Key("gcpProject").
 						Options(gcpProjects...).
 						Title("Google Cloud Platform Project").
-						Description("Select the project you want to use for the OGI setup.").
+						Description("Select the project you want to use for the Glide setup.").
 						Validate(func(value string) error {
 							if value == "" {
-								return fmt.Errorf("We need to associate the OGI endpoints with a GCP project - please select one.")
+								return fmt.Errorf("We need to associate the Glide endpoints with a GCP project - please select one.")
 							}
 							return nil
 						}),
@@ -138,7 +138,7 @@ var LoginCmd = &cobra.Command{
 		} else {
 			// print the credentials
 			fmt.Printf(
-				"%s\n",
+				"\n%s\n",
 				ui.Box.
 					Width(80).
 					BorderForeground(ui.Indigo).
@@ -146,54 +146,11 @@ var LoginCmd = &cobra.Command{
 					Render(
 						fmt.Sprintf(
 							"%s\n\n%s",
-							ui.Highlight.Render("Your ClearX OGI Credentials:"),
+							ui.Highlight.Render("Your Glide Credentials:"),
 							credentials.ToString(),
 						),
 					),
 			)
 		}
-
-		// fmt.Printf(
-		// 	"\n%s\n",
-		// 	ui.Box(
-		// 		fmt.Sprintf(
-		// 			"%s\n%s",
-		// 			ui.Title("Welcome to ClearX Open Gateway!"),
-		// 			"\nConnect your local development environment with ClearX Open Gateway on Google Cloud Platform.",
-		// 		),
-		// 	),
-		// )
-
-		// var (
-		// 	selectedAPIs []string
-		// 	selectedGCPProject string
-		// 	generateEnvFile bool = false
-		// )
-
-		// // Get the desired products
-		// for ok := true; ok; ok = len(selectedAPIs) == 0 {
-		// 	huh.NewMultiSelect[string]().
-		// 		Options(
-		// 			huh.NewOption("1) Telco Finder - Identify the Telecom provider of a phone number", "telco-finder"),
-		// 			huh.NewOption("2) SIM Swap Checker - Perform time-sensitive SIM Swap checks", "sim-swap"),
-		// 			huh.NewOption("3) Number Verify - Authenticate users by verifying their number association to the mobile network", "number-verify"),
-		// 		).
-		// 		Title("Which ClearX OGI endpoint you need access to?").
-		// 		Value(&selectedAPIs).
-		// 		Run()
-		// }
-
-		// // get the desired GCP project
-		// huh.NewSelect[string]().
-		// 	Options(gcpProjects...).
-		// 	Title("Select the Google Cloud Platform project you want to use").
-		// 	Value(&selectedGCPProject).
-		// 	Run()
-
-		// ask the user if they want to generate a .env file
-		// huh.NewConfirm().
-		// 	Title("Do you want to generate a .env file with the credentials?").
-		// 	Value(&generateEnvFile).
-		// 	Run()
 	},
 }

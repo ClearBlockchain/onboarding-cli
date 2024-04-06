@@ -17,9 +17,9 @@ var (
 
 	rootCmd = &cobra.Command{
 		Use:   "glide",
-		Short: "Manage global Network APIs, 5G, Edge resources with ClearX",
+		Short: "Manage global Network APIs, 5G, Edge resources with Glide",
 		Long: ui.Paragraph.Render(
-			fmt.Sprintf("\nExplore %s Integration Layer, a one-stop infrastructure offering access to Network APIs, 5G, and edge resources from worldwide CSPs and perform time-sensitive SIM Swap checks using a unified interface and API", ui.Keyword.Render("ClearX Open Gateway")),
+			fmt.Sprintf("\nExplore %s Integration Layer, a one-stop infrastructure offering access to Network APIs, 5G, and edge resources from worldwide CSPs and perform time-sensitive SIM Swap checks using a unified interface and API", ui.Keyword.Render("Glide")),
 		),
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Print(GetLongDescription())
