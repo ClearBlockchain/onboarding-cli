@@ -78,7 +78,7 @@ changelog:
 
 brews:
   - repository:
-      owner: glide
+      owner: ClearBlockchain
       name: homebrew-tap
     directory: Formula
     goarm: "7"
