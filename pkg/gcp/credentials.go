@@ -50,6 +50,12 @@ func fetchCredentials(
 	}
 
 	groupLocator := internalPage.Locator(".input-group-wrapper")
+
+	if err := groupLocator.WaitFor(); err != nil {
+		log.Errorf("Failed to wait for the group locator: %v", err)
+		return nil, err
+	}
+
 	return &Credentials{
 		RedirectURI: pwi.getInputValue(groupLocator.Nth(0)),
 		ClientID:    pwi.getInputValue(groupLocator.Nth(1)),
